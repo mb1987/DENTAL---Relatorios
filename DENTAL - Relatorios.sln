@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1082
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "DENTAL - Relatorios", "DENTAL - Relatorios\DENTAL - Relatorios.rptproj", "{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		DebugLocal|Default = DebugLocal|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.Debug|Default.ActiveCfg = Debug
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.Debug|Default.Build.0 = Debug
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.Debug|Default.Deploy.0 = Debug
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.DebugLocal|Default.ActiveCfg = DebugLocal
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.DebugLocal|Default.Build.0 = DebugLocal
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.Release|Default.ActiveCfg = Release
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.Release|Default.Build.0 = Release
+		{2ED782C7-56D6-45B9-95F6-87B451FBCBE6}.Release|Default.Deploy.0 = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8F83F128-1002-49EF-BDB3-04BECBEC3D92}
+	EndGlobalSection
+EndGlobal

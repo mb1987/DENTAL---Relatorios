@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SharedDataSet xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/shareddatasetdefinition">
+  <DataSet Name="DataSet1">
+    <Query>
+      <DataSourceReference>Sankhya-Prod</DataSourceReference>
+      <CommandText>SELECT 
+CODVEND, APELIDO      
+FROM TGFVEN
+WHERE ATIVO='S'
+AND CODVEND !=0
+</CommandText>
+    </Query>
+  </DataSet>
+</SharedDataSet>

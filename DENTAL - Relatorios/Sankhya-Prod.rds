@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RptDataSource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="Sankhya-Prod">
+  <ConnectionProperties>
+    <Extension>SQL</Extension>
+    <ConnectString>Data Source=192.168.0.55;Initial Catalog=sankhya_prod</ConnectString>
+  </ConnectionProperties>
+  <DataSourceID>3e2b6574-0122-4d9a-947d-614bce237d8b</DataSourceID>
+</RptDataSource>

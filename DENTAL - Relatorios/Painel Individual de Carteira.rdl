@@ -2,11 +2,556 @@
 <Report MustUnderstand="df" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
   <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
   <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="ds_sankhya">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=192.168.0.55;Initial Catalog=sankhya_prod</ConnectString>
+      </ConnectionProperties>
+      <rd:SecurityType>DataBase</rd:SecurityType>
+      <rd:DataSourceID>6b1cdb6c-242b-4900-9004-f61ee1de8414</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="ds_carteira">
+      <Query>
+        <DataSourceName>ds_sankhya</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@pANo">
+            <Value>=Parameters!pANo.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@pMes">
+            <Value>=Parameters!pMes.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@pCodVend">
+            <Value>=Parameters!pCodVend.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT 'CODVEND' = tgfven.codvend , 
+       'VENDEDOR' = Ltrim(Rtrim(tgfven.apelido)) , 
+       'CARTEIRA'= ( (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                      FROM   tgfpar 
+                      WHERE  tgfpar.codvend = tgfven.codvend 
+                             AND tgfpar.cliente = 'S' 
+                             AND tgfpar.ativo = 'S') 
+                     + (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                        FROM   tgfpar 
+                        WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                               AND tgfpar.cliente = 'S' 
+                               AND tgfpar.ativo = 'S') ), 
+       'COBERTURA'= ( (SELECT Count(DISTINCT( view_dental_360.codparc )) 
+                       FROM   view_dental_360 
+                       WHERE  view_dental_360.codvend = tgfven.codvend 
+                              AND view_dental_360.status = 'FAT' 
+                              AND view_dental_360.ano = @pANo 
+                              AND view_dental_360.mes = @pMes) 
+                      + (SELECT Count(DISTINCT( view_dental_360.codparc )) *- 1 
+                         FROM   view_dental_360 
+                         WHERE  view_dental_360.codvend = tgfven.codvend 
+                                AND view_dental_360.status = 'DEV' 
+                                AND view_dental_360.ano = @pANo 
+                                AND view_dental_360.mes = @pMes) ), 
+       'NOVOS_CLIENTES'= ( (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                            FROM   tgfpar 
+                            WHERE  tgfpar.codvend = tgfven.codvend 
+                                   AND tgfpar.cliente = 'S' 
+                                   AND tgfpar.ativo = 'S' 
+                                   AND Year(tgfpar.dtcad) = @pANo 
+                                   AND Month(tgfpar.dtcad) = @pMes) 
+                           + (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                              FROM   tgfpar 
+                              WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                                     AND tgfpar.cliente = 'S' 
+                                     AND tgfpar.ativo = 'S' 
+                                     AND Year(tgfpar.dtcad) = @pANo 
+                                     AND Month(tgfpar.dtcad) = @pMes) ), 
+       'COBERTURA_NOVOS_CLIENTES'= ( (SELECT 
+                                   Count (DISTINCT( view_dental_360.codparc )) 
+                                      FROM   tgfpar 
+                                             JOIN view_dental_360 ON ( tgfpar.codparc = view_dental_360.codparc ) 
+                                      WHERE  tgfpar.codvend = tgfven.codvend 
+                                             AND view_dental_360.status = 'FAT' 
+                                             AND tgfpar.cliente = 'S' 
+                                             AND tgfpar.ativo = 'S' 
+                                             AND Year(tgfpar.dtcad) = @pANo 
+                                             AND Month(tgfpar.dtcad) = @pMes) 
+                                     + (SELECT Count (DISTINCT 
+                                               ( view_dental_360.codparc )) 
+                                        FROM   tgfpar 
+                                               JOIN view_dental_360 ON ( tgfpar.codparc = view_dental_360.codparc ) 
+                                        WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                                               AND view_dental_360.status = 'FAT' 
+                                               AND tgfpar.cliente = 'S' 
+                                               AND tgfpar.ativo = 'S' 
+                                               AND Year(tgfpar.dtcad) = @pANo 
+                                               AND Month(tgfpar.dtcad) = @pMes) 
+                                     + (SELECT Count (DISTINCT 
+                                               ( view_dental_360.codparc )) *- 1 
+                                        FROM   tgfpar 
+                                               JOIN view_dental_360 ON ( tgfpar.codparc = view_dental_360.codparc ) 
+                                        WHERE  tgfpar.codvend = tgfven.codvend 
+                                               AND view_dental_360.status = 'DEV' 
+                                               AND tgfpar.cliente = 'S' 
+                                               AND tgfpar.ativo = 'S' 
+                                               AND Year(tgfpar.dtcad) = @pANo 
+                                               AND Month(tgfpar.dtcad) = @pMes) 
+                                     + (SELECT Count (DISTINCT 
+                                               ( view_dental_360.codparc )) *- 1 
+                                        FROM   tgfpar 
+                                               JOIN view_dental_360 ON ( tgfpar.codparc = view_dental_360.codparc ) 
+                                        WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                                               AND view_dental_360.status = 'DEV' 
+                                               AND tgfpar.cliente = 'S' 
+                                               AND tgfpar.ativo = 'S' 
+                                               AND Year(tgfpar.dtcad) = @pANo 
+                                               AND Month(tgfpar.dtcad) = @pMes) ), 
+       'SEM_VENDA'= ( (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                       FROM   tgfpar 
+                       WHERE  tgfpar.codvend = tgfven.codvend 
+                              AND tgfpar.cliente = 'S' 
+                              AND tgfpar.ativo = 'S' 
+                              AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0) )) &gt;= 120) 
+                      + (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                         FROM   tgfpar 
+                         WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                                AND tgfpar.cliente = 'S' 
+                                AND tgfpar.ativo = 'S' 
+                                AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0 ) )) &gt;= 120) ), 
+       'SEM_VENDA_LOCAL'= ( (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                             FROM   tgfpar 
+                             WHERE  tgfpar.codvend = tgfven.codvend 
+                                    AND tgfpar.cliente = 'S' 
+                                    AND tgfpar.ativo = 'S' 
+                                    AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0) )) &gt;= 60 
+                                    AND tgfpar.cep BETWEEN '01000000' AND '09999999') 
+                            + (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                               FROM   tgfpar 
+                               WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                                      AND tgfpar.cliente = 'S' 
+                                      AND tgfpar.ativo = 'S' 
+                                      AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0) )) &gt;= 60 
+                                      AND tgfpar.cep BETWEEN'01000000' AND '09999999') 
+                          ), 
+       'SEM_VENDA_ESTADUAL'= ( (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                                FROM   tgfpar 
+                                WHERE  tgfpar.codvend = tgfven.codvend 
+                                       AND tgfpar.cliente = 'S' 
+                                       AND tgfpar.ativo = 'S' 
+                                       AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0) ))&gt;= 90 
+                                       AND tgfpar.cep BETWEEN'10000000' AND '19999999' 
+                               ) 
+                               + (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                                  FROM   tgfpar 
+                                  WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                                         AND tgfpar.cliente = 'S' 
+                                         AND tgfpar.ativo = 'S' 
+                                         AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0))) &gt;= 90 
+                                         AND tgfpar.cep BETWEEN'10000000' AND '19999999') ), 
+       'SEM_VENDA_NACIONAL'= ( (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                                FROM   tgfpar 
+                                WHERE  tgfpar.codvend = tgfven.codvend 
+                                       AND tgfpar.cliente = 'S' 
+                                       AND tgfpar.ativo = 'S' 
+                                       AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0) ))&gt;= 120 
+                                       AND tgfpar.cep BETWEEN '20000000' AND '99999999' 
+                               ) 
+                               + (SELECT Count (DISTINCT( tgfpar.codparc )) 
+                                  FROM   tgfpar 
+                                  WHERE  tgfpar.ad_codvend2 = tgfven.codvend 
+                                         AND tgfpar.cliente = 'S' 
+                                         AND tgfpar.ativo = 'S' 
+                                         AND CONVERT(INT, ( Getdate() - Isnull(ad_dtultcompra, 0) )) &gt;=120 
+                                         AND tgfpar.cep BETWEEN '20000000' AND '99999999') ), 
+       'TLMKT'= (SELECT Count(DISTINCT( tgftel.codparc )) 
+                 FROM   tgftel 
+                 WHERE  tgftel.tipcham NOT IN ( 'C', 'D' ) 
+                        AND tgftel.pendente = 'N' 
+                        AND tgftel.codusu = tsiusu.codusu 
+                        AND Year(tgftel.dhchamada) = @pANo 
+                        AND Month(tgftel.dhchamada) = @pMes), 
+       'TLMKT_ATRASADO'= (SELECT Count(DISTINCT( tgftel.codparc )) 
+                          FROM   tgftel 
+                          WHERE  tgftel.tipcham NOT IN ( 'C', 'D' ) 
+                                 AND tgftel.pendente = 'S' 
+                                 AND tgftel.codusu = tsiusu.codusu 
+                                 AND CONVERT(DATE, tgftel.dhproxcham) &lt;= CONVERT(DATE, Getdate())) 
+FROM   tgfven 
+JOIN tsiusu ON ( tgfven.codvend = tsiusu.codvend ) 
+WHERE  tgfven.ativo = 'S' 
+       AND tgfven.ad_tipodental = 'T' 
+	   AND tgfven.codvend = @pCodVend</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="CODVEND">
+          <DataField>CODVEND</DataField>
+          <rd:TypeName>System.Int16</rd:TypeName>
+        </Field>
+        <Field Name="VENDEDOR">
+          <DataField>VENDEDOR</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="CARTEIRA">
+          <DataField>CARTEIRA</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="COBERTURA">
+          <DataField>COBERTURA</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="NOVOS_CLIENTES">
+          <DataField>NOVOS_CLIENTES</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="COBERTURA_NOVOS_CLIENTES">
+          <DataField>COBERTURA_NOVOS_CLIENTES</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SEM_VENDA">
+          <DataField>SEM_VENDA</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SEM_VENDA_LOCAL">
+          <DataField>SEM_VENDA_LOCAL</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SEM_VENDA_ESTADUAL">
+          <DataField>SEM_VENDA_ESTADUAL</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="SEM_VENDA_NACIONAL">
+          <DataField>SEM_VENDA_NACIONAL</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="TLMKT">
+          <DataField>TLMKT</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="TLMKT_ATRASADO">
+          <DataField>TLMKT_ATRASADO</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="PERC_COBERTURA">
+          <Value>=Fields!COBERTURA.Value/Fields!CARTEIRA.Value</Value>
+        </Field>
+        <Field Name="PERC_COBERTURA_NOVOS">
+          <Value>=Fields!COBERTURA_NOVOS_CLIENTES.Value/Fields!NOVOS_CLIENTES.Value</Value>
+        </Field>
+        <Field Name="PERC_INATIVACAO_LOCAL">
+          <Value>=Fields!SEM_VENDA_LOCAL.Value/Fields!CARTEIRA.Value</Value>
+        </Field>
+        <Field Name="PERC_INATIVACAO_ESTADUAL">
+          <Value>=Fields!SEM_VENDA_ESTADUAL.Value/Fields!CARTEIRA.Value</Value>
+        </Field>
+        <Field Name="PERC_INATIVACAO_NACIONAL">
+          <Value>=Fields!SEM_VENDA_NACIONAL.Value/Fields!CARTEIRA.Value</Value>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="ds_vendedores">
+      <Query>
+        <DataSourceName>ds_sankhya</DataSourceName>
+        <CommandText>select DISTINCT t.CODVEND,
+		t.APELIDO
+from sankhya.TGFVEN t
+JOIN sankhya.AD_METADENTAL am ON t.CODVEND = am.CODVEND
+WHERE t.ATIVO = 'S'
+AND t.CODVEND NOT IN (0,76,2000)
+order by t.APELIDO</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="CODVEND">
+          <DataField>CODVEND</DataField>
+          <rd:TypeName>System.Int16</rd:TypeName>
+        </Field>
+        <Field Name="APELIDO">
+          <DataField>APELIDO</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
   <ReportSections>
     <ReportSection>
       <Body>
         <ReportItems>
-          <Chart Name="Chart1">
+          <GaugePanel Name="GaugePanel1">
+            <RadialGauges>
+              <RadialGauge Name="RadialGauge1">
+                <PivotY>85</PivotY>
+                <GaugeScales>
+                  <RadialScale Name="RadialScale1">
+                    <Radius>55</Radius>
+                    <StartAngle>90</StartAngle>
+                    <SweepAngle>180</SweepAngle>
+                    <GaugePointers>
+                      <RadialPointer Name="RadialPointer1">
+                        <Type>Bar</Type>
+                        <PointerCap>
+                          <Style>
+                            <BackgroundColor>White</BackgroundColor>
+                            <BackgroundGradientType>DiagonalLeft</BackgroundGradientType>
+                            <BackgroundGradientEndColor>DimGray</BackgroundGradientEndColor>
+                            <FontFamily>Arial</FontFamily>
+                            <BackgroundHatchType>None</BackgroundHatchType>
+                          </Style>
+                          <CapImage>
+                            <OffsetX>0pt</OffsetX>
+                            <OffsetY>0pt</OffsetY>
+                            <Source>External</Source>
+                            <Value />
+                          </CapImage>
+                          <OnTop>true</OnTop>
+                          <CapStyle>RoundedWithWideIndentation</CapStyle>
+                          <Width>33</Width>
+                        </PointerCap>
+                        <NeedleStyle>Tapered</NeedleStyle>
+                        <Style>
+                          <Border>
+                            <Style>None</Style>
+                          </Border>
+                          <BackgroundColor>#01b8aa</BackgroundColor>
+                          <BackgroundGradientType>None</BackgroundGradientType>
+                          <BackgroundGradientEndColor>Orange</BackgroundGradientEndColor>
+                          <BackgroundHatchType>None</BackgroundHatchType>
+                          <ShadowOffset>0pt</ShadowOffset>
+                        </Style>
+                        <GaugeInputValue>
+                          <Value>=Sum(Fields!COBERTURA.Value)</Value>
+                          <Multiplier>1</Multiplier>
+                        </GaugeInputValue>
+                        <PointerImage>
+                          <OffsetX>0pt</OffsetX>
+                          <OffsetY>0pt</OffsetY>
+                          <Source>External</Source>
+                          <Value />
+                        </PointerImage>
+                        <MarkerLength>25</MarkerLength>
+                        <MarkerStyle>Wedge</MarkerStyle>
+                        <Placement>Cross</Placement>
+                        <Width>30</Width>
+                      </RadialPointer>
+                    </GaugePointers>
+                    <Style>
+                      <Border>
+                        <Style>None</Style>
+                      </Border>
+                      <BackgroundColor>LightGrey</BackgroundColor>
+                      <BackgroundGradientType>None</BackgroundGradientType>
+                      <BackgroundGradientEndColor>White</BackgroundGradientEndColor>
+                      <BackgroundHatchType>None</BackgroundHatchType>
+                      <ShadowOffset>0pt</ShadowOffset>
+                    </Style>
+                    <Interval>NaN</Interval>
+                    <IntervalOffset>NaN</IntervalOffset>
+                    <MaximumValue>
+                      <Value>=Sum(Fields!CARTEIRA.Value)</Value>
+                      <Multiplier>1</Multiplier>
+                    </MaximumValue>
+                    <MinimumValue>
+                      <Value>0</Value>
+                      <Multiplier>1</Multiplier>
+                    </MinimumValue>
+                    <GaugeMajorTickMarks>
+                      <Interval>NaN</Interval>
+                      <IntervalOffset>NaN</IntervalOffset>
+                      <Style>
+                        <Border>
+                          <Color>DimGray</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>WhiteSmoke</BackgroundColor>
+                      </Style>
+                      <Placement>Cross</Placement>
+                      <TickMarkImage>
+                        <Source>External</Source>
+                        <Value />
+                      </TickMarkImage>
+                      <Length>14</Length>
+                      <Width>8</Width>
+                      <Shape>Trapezoid</Shape>
+                      <Hidden>true</Hidden>
+                    </GaugeMajorTickMarks>
+                    <GaugeMinorTickMarks>
+                      <Interval>NaN</Interval>
+                      <IntervalOffset>NaN</IntervalOffset>
+                      <Style>
+                        <Border>
+                          <Color>DimGray</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>WhiteSmoke</BackgroundColor>
+                      </Style>
+                      <Placement>Cross</Placement>
+                      <TickMarkImage>
+                        <Source>External</Source>
+                        <Value />
+                      </TickMarkImage>
+                      <Length>8</Length>
+                      <Width>3</Width>
+                      <Hidden>true</Hidden>
+                    </GaugeMinorTickMarks>
+                    <MaximumPin>
+                      <PinLabel>
+                        <Style>
+                          <FontSize>12pt</FontSize>
+                        </Style>
+                        <DistanceFromScale>0</DistanceFromScale>
+                      </PinLabel>
+                      <Style>
+                        <Border>
+                          <Color>DimGray</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>WhiteSmoke</BackgroundColor>
+                      </Style>
+                      <Placement>Cross</Placement>
+                      <TickMarkImage>
+                        <Source>External</Source>
+                        <Value />
+                      </TickMarkImage>
+                      <Length>6</Length>
+                      <Width>6</Width>
+                      <Shape>Circle</Shape>
+                    </MaximumPin>
+                    <MinimumPin>
+                      <PinLabel>
+                        <Style>
+                          <FontSize>12pt</FontSize>
+                        </Style>
+                        <DistanceFromScale>0</DistanceFromScale>
+                      </PinLabel>
+                      <Style>
+                        <Border>
+                          <Color>DimGray</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>WhiteSmoke</BackgroundColor>
+                      </Style>
+                      <Placement>Cross</Placement>
+                      <TickMarkImage>
+                        <Source>External</Source>
+                        <Value />
+                      </TickMarkImage>
+                      <Length>6</Length>
+                      <Width>6</Width>
+                      <Shape>Circle</Shape>
+                    </MinimumPin>
+                    <ScaleLabels>
+                      <Style>
+                        <FontSize>14pt</FontSize>
+                      </Style>
+                      <Interval>NaN</Interval>
+                      <IntervalOffset>NaN</IntervalOffset>
+                      <DistanceFromScale>0</DistanceFromScale>
+                      <Placement>Outside</Placement>
+                      <ShowEndLabels>true</ShowEndLabels>
+                      <UseFontPercent>true</UseFontPercent>
+                    </ScaleLabels>
+                    <Width>30</Width>
+                  </RadialScale>
+                </GaugeScales>
+                <BackFrame>
+                  <Style>
+                    <Border>
+                      <Style>None</Style>
+                    </Border>
+                    <BackgroundColor>WhiteSmoke</BackgroundColor>
+                    <BackgroundGradientType>None</BackgroundGradientType>
+                    <BackgroundGradientEndColor>Gainsboro</BackgroundGradientEndColor>
+                    <BackgroundHatchType>None</BackgroundHatchType>
+                    <ShadowOffset>0pt</ShadowOffset>
+                  </Style>
+                  <FrameShape>CustomSemiCircularN1</FrameShape>
+                  <FrameBackground>
+                    <Style>
+                      <BackgroundColor>WhiteSmoke</BackgroundColor>
+                      <BackgroundGradientType>DiagonalLeft</BackgroundGradientType>
+                      <BackgroundGradientEndColor>Gray</BackgroundGradientEndColor>
+                      <BackgroundHatchType>None</BackgroundHatchType>
+                    </Style>
+                  </FrameBackground>
+                  <FrameImage>
+                    <Source>External</Source>
+                    <Value />
+                  </FrameImage>
+                </BackFrame>
+                <ClipContent>true</ClipContent>
+                <TopImage>
+                  <Source>External</Source>
+                  <Value />
+                </TopImage>
+                <AspectRatio>1.48</AspectRatio>
+                <Height>100</Height>
+                <Width>100</Width>
+              </RadialGauge>
+            </RadialGauges>
+            <GaugeLabels>
+              <GaugeLabel Name="GaugeLabel1">
+                <Text>=FormatPercent(Fields!PERC_COBERTURA.Value,1)</Text>
+                <TextShadowOffset>0pt</TextShadowOffset>
+                <UseFontPercent>true</UseFontPercent>
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <BackgroundColor>#00ffffff</BackgroundColor>
+                  <BackgroundGradientType>None</BackgroundGradientType>
+                  <BackgroundGradientEndColor>#00ffffff</BackgroundGradientEndColor>
+                  <FontFamily>Segoe UI Light</FontFamily>
+                  <FontSize>14pt</FontSize>
+                  <TextAlign>Center</TextAlign>
+                  <VerticalAlign>Middle</VerticalAlign>
+                  <Color>#333333</Color>
+                  <ShadowOffset>0pt</ShadowOffset>
+                </Style>
+                <Top>50</Top>
+                <Left>30</Left>
+                <Height>40</Height>
+                <Width>40</Width>
+                <ParentItem>RadialGauges.RadialGauge1</ParentItem>
+              </GaugeLabel>
+            </GaugeLabels>
+            <AutoLayout>true</AutoLayout>
+            <BackFrame>
+              <Style>
+                <Border>
+                  <Style>None</Style>
+                </Border>
+                <BackgroundColor>Gainsboro</BackgroundColor>
+                <BackgroundGradientType>None</BackgroundGradientType>
+                <BackgroundGradientEndColor>Gray</BackgroundGradientEndColor>
+                <BackgroundHatchType>None</BackgroundHatchType>
+                <ShadowOffset>0pt</ShadowOffset>
+              </Style>
+              <FrameBackground>
+                <Style>
+                  <BackgroundColor>Silver</BackgroundColor>
+                  <BackgroundGradientType>DiagonalLeft</BackgroundGradientType>
+                  <BackgroundGradientEndColor>Gray</BackgroundGradientEndColor>
+                  <BackgroundHatchType>None</BackgroundHatchType>
+                </Style>
+              </FrameBackground>
+              <FrameImage>
+                <Source>External</Source>
+                <Value />
+              </FrameImage>
+            </BackFrame>
+            <TopImage>
+              <Source>External</Source>
+              <Value />
+            </TopImage>
+            <DataSetName>ds_carteira</DataSetName>
+            <Top>3.09245cm</Top>
+            <Height>5.07938cm</Height>
+            <Width>10.04cm</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+              <BackgroundColor>White</BackgroundColor>
+            </Style>
+          </GaugePanel>
+          <Chart Name="Chart2">
             <ChartCategoryHierarchy>
               <ChartMembers>
                 <ChartMember>
@@ -18,21 +563,86 @@
             <ChartSeriesHierarchy>
               <ChartMembers>
                 <ChartMember>
-                  <Label />
+                  <Label>NOVOS CLIENTES</Label>
+                </ChartMember>
+                <ChartMember>
+                  <Label>COBERTURA NOVOS CLIENTES</Label>
                 </ChartMember>
               </ChartMembers>
             </ChartSeriesHierarchy>
             <ChartData>
               <ChartSeriesCollection>
-                <ChartSeries Name="EmptySeriesName">
+                <ChartSeries Name="NOVOS_CLIENTES">
                   <ChartDataPoints>
                     <ChartDataPoint>
-                      <ChartDataPointValues />
+                      <ChartDataPointValues>
+                        <Y>=Sum(Fields!NOVOS_CLIENTES.Value)</Y>
+                      </ChartDataPointValues>
+                      <ChartDataLabel>
+                        <Style />
+                        <UseValueAsLabel>true</UseValueAsLabel>
+                        <Visible>true</Visible>
+                      </ChartDataLabel>
+                      <Style />
+                      <ChartMarker>
+                        <Style />
+                      </ChartMarker>
+                      <DataElementOutput>Output</DataElementOutput>
                     </ChartDataPoint>
                   </ChartDataPoints>
-                  <Type>Shape</Type>
-                  <Subtype>Funnel</Subtype>
+                  <Type>Bar</Type>
                   <Style />
+                  <ChartEmptyPoints>
+                    <Style />
+                    <ChartMarker>
+                      <Style />
+                    </ChartMarker>
+                    <ChartDataLabel>
+                      <Style />
+                    </ChartDataLabel>
+                  </ChartEmptyPoints>
+                  <ValueAxisName>Primary</ValueAxisName>
+                  <CategoryAxisName>Primary</CategoryAxisName>
+                  <ChartSmartLabel>
+                    <CalloutLineColor>Black</CalloutLineColor>
+                    <MinMovingDistance>0pt</MinMovingDistance>
+                  </ChartSmartLabel>
+                </ChartSeries>
+                <ChartSeries Name="COBERTURA_NOVOS_CLIENTES">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=Sum(Fields!COBERTURA_NOVOS_CLIENTES.Value)</Y>
+                      </ChartDataPointValues>
+                      <ChartDataLabel>
+                        <Style />
+                        <UseValueAsLabel>true</UseValueAsLabel>
+                        <Visible>true</Visible>
+                      </ChartDataLabel>
+                      <Style />
+                      <ChartMarker>
+                        <Style />
+                      </ChartMarker>
+                      <DataElementOutput>Output</DataElementOutput>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Type>Bar</Type>
+                  <Style />
+                  <ChartEmptyPoints>
+                    <Style />
+                    <ChartMarker>
+                      <Style />
+                    </ChartMarker>
+                    <ChartDataLabel>
+                      <Style />
+                    </ChartDataLabel>
+                  </ChartEmptyPoints>
+                  <ValueAxisName>Primary</ValueAxisName>
+                  <CategoryAxisName>Primary</CategoryAxisName>
+                  <ChartSmartLabel>
+                    <CalloutLineColor>Black</CalloutLineColor>
+                    <MinMovingDistance>0pt</MinMovingDistance>
+                  </ChartSmartLabel>
                 </ChartSeries>
               </ChartSeriesCollection>
             </ChartData>
@@ -40,6 +650,7 @@
               <ChartArea Name="Default">
                 <ChartCategoryAxes>
                   <ChartAxis Name="Primary">
+                    <Visible>False</Visible>
                     <Style>
                       <Border>
                         <Color>Gainsboro</Color>
@@ -153,6 +764,7 @@
                 </ChartCategoryAxes>
                 <ChartValueAxes>
                   <ChartAxis Name="Primary">
+                    <Visible>False</Visible>
                     <Style>
                       <Border>
                         <Color>Gainsboro</Color>
@@ -274,6 +886,7 @@
                   <BackgroundGradientType>None</BackgroundGradientType>
                   <FontSize>8pt</FontSize>
                 </Style>
+                <Position>TopLeft</Position>
                 <ChartLegendTitle>
                   <Caption />
                   <Style>
@@ -288,7 +901,7 @@
             </ChartLegends>
             <ChartTitles>
               <ChartTitle Name="Default">
-                <Caption>Chart Title</Caption>
+                <Caption>Novos Clientes</Caption>
                 <Style>
                   <BackgroundGradientType>None</BackgroundGradientType>
                   <FontSize>9pt</FontSize>
@@ -309,7 +922,7 @@
               </Style>
             </ChartBorderSkin>
             <ChartNoDataMessage Name="NoDataMessage">
-              <Caption>No Data Available</Caption>
+              <Caption>Não Há Dados Disponíveis</Caption>
               <Style>
                 <BackgroundGradientType>None</BackgroundGradientType>
                 <FontWeight>Bold</FontWeight>
@@ -317,9 +930,12 @@
                 <VerticalAlign>Top</VerticalAlign>
               </Style>
             </ChartNoDataMessage>
-            <Top>2.84613cm</Top>
-            <Height>5.89958cm</Height>
-            <Width>8.66417cm</Width>
+            <DataSetName>ds_carteira</DataSetName>
+            <Top>3.09245cm</Top>
+            <Left>10.34203cm</Left>
+            <Height>5.07938cm</Height>
+            <Width>11.99792cm</Width>
+            <ZIndex>1</ZIndex>
             <Style>
               <Border>
                 <Color>LightGrey</Color>
@@ -329,202 +945,6 @@
               <BackgroundGradientType>None</BackgroundGradientType>
             </Style>
           </Chart>
-          <Map Name="Map3">
-            <MapViewport>
-              <MapCoordinateSystem>Geographic</MapCoordinateSystem>
-              <MapProjection>Mercator</MapProjection>
-              <ProjectionCenterX>NaN</ProjectionCenterX>
-              <ProjectionCenterY>NaN</ProjectionCenterY>
-              <MapLimits>
-                <MinimumX>NaN</MinimumX>
-                <MinimumY>NaN</MinimumY>
-                <MaximumX>NaN</MaximumX>
-                <MaximumY>NaN</MaximumY>
-              </MapLimits>
-              <MaximumZoom>4000000</MaximumZoom>
-              <MapCustomView>
-                <Zoom>170</Zoom>
-              </MapCustomView>
-              <MapMeridians>
-                <Style>
-                  <Border>
-                    <Color>LightGrey</Color>
-                    <Style>None</Style>
-                  </Border>
-                  <FontSize>8pt</FontSize>
-                  <Format>#°E;#°W;0°</Format>
-                  <Color>Gray</Color>
-                </Style>
-                <Interval>NaN</Interval>
-                <ShowLabels>true</ShowLabels>
-              </MapMeridians>
-              <MapParallels>
-                <Style>
-                  <Border>
-                    <Color>LightGrey</Color>
-                    <Style>None</Style>
-                  </Border>
-                  <FontSize>8pt</FontSize>
-                  <Format>#°N;#°S;0°</Format>
-                  <Color>Gray</Color>
-                </Style>
-                <Interval>NaN</Interval>
-                <ShowLabels>true</ShowLabels>
-              </MapParallels>
-              <GridUnderContent>false</GridUnderContent>
-              <Style>
-                <Border>
-                  <Color>#00ffffff</Color>
-                  <Style>None</Style>
-                </Border>
-                <BackgroundColor>White</BackgroundColor>
-                <BackgroundGradientType>None</BackgroundGradientType>
-                <BackgroundGradientEndColor>#00ffffff</BackgroundGradientEndColor>
-                <ShadowOffset>0pt</ShadowOffset>
-              </Style>
-              <LeftMargin>2pt</LeftMargin>
-              <RightMargin>2pt</RightMargin>
-              <TopMargin>2pt</TopMargin>
-              <BottomMargin>2pt</BottomMargin>
-            </MapViewport>
-            <MapLegends>
-              <MapLegend Name="Legend1">
-                <MapLegendTitle>
-                  <Style>
-                    <BackgroundColor>#00ffffff</BackgroundColor>
-                    <FontSize>8pt</FontSize>
-                    <Color>White</Color>
-                  </Style>
-                  <Caption>Title</Caption>
-                </MapLegendTitle>
-                <AutoFitTextDisabled>false</AutoFitTextDisabled>
-                <InterlacedRows>false</InterlacedRows>
-                <EquallySpacedItems>false</EquallySpacedItems>
-                <Position>RightTop</Position>
-                <DockOutsideViewport>false</DockOutsideViewport>
-                <Style>
-                  <Border>
-                    <Color>#00ffffff</Color>
-                    <Style>None</Style>
-                  </Border>
-                  <BackgroundColor>#40000000</BackgroundColor>
-                  <BackgroundGradientType>None</BackgroundGradientType>
-                  <BackgroundGradientEndColor>#00ffffff</BackgroundGradientEndColor>
-                  <FontSize>8pt</FontSize>
-                  <Color>White</Color>
-                  <ShadowOffset>0pt</ShadowOffset>
-                </Style>
-                <LeftMargin>2pt</LeftMargin>
-                <RightMargin>2pt</RightMargin>
-                <TopMargin>2pt</TopMargin>
-                <BottomMargin>2pt</BottomMargin>
-              </MapLegend>
-            </MapLegends>
-            <MapTitles>
-              <MapTitle Name="Title1">
-                <Text>Map Title</Text>
-                <Angle>NaN</Angle>
-                <TextShadowOffset>0pt</TextShadowOffset>
-                <DockOutsideViewport>true</DockOutsideViewport>
-                <Style>
-                  <Border>
-                    <Color>#00ffffff</Color>
-                    <Style>None</Style>
-                  </Border>
-                  <BackgroundColor>#00ffffff</BackgroundColor>
-                  <BackgroundGradientType>None</BackgroundGradientType>
-                  <BackgroundGradientEndColor>#00ffffff</BackgroundGradientEndColor>
-                  <FontWeight>Normal</FontWeight>
-                  <TextAlign>Left</TextAlign>
-                  <Color>#a6a6a6</Color>
-                  <ShadowOffset>0pt</ShadowOffset>
-                </Style>
-                <LeftMargin>2pt</LeftMargin>
-                <RightMargin>2pt</RightMargin>
-                <TopMargin>2pt</TopMargin>
-                <BottomMargin>2pt</BottomMargin>
-              </MapTitle>
-            </MapTitles>
-            <MapDistanceScale>
-              <ScaleBorderColor>LightGrey</ScaleBorderColor>
-              <Position>RightBottom</Position>
-              <DockOutsideViewport>false</DockOutsideViewport>
-              <Style>
-                <Border>
-                  <Color>#00ffffff</Color>
-                  <Style>None</Style>
-                </Border>
-                <BackgroundColor>#40000000</BackgroundColor>
-                <BackgroundGradientType>None</BackgroundGradientType>
-                <BackgroundGradientEndColor>#00ffffff</BackgroundGradientEndColor>
-                <FontSize>8pt</FontSize>
-                <Color>White</Color>
-                <ShadowOffset>0pt</ShadowOffset>
-              </Style>
-              <MapSize>
-                <Width>80</Width>
-                <Height>40</Height>
-                <Unit>Point</Unit>
-              </MapSize>
-              <LeftMargin>2pt</LeftMargin>
-              <RightMargin>2pt</RightMargin>
-              <TopMargin>2pt</TopMargin>
-              <BottomMargin>2pt</BottomMargin>
-            </MapDistanceScale>
-            <MapColorScale>
-              <MapColorScaleTitle>
-                <Style>
-                  <FontSize>8pt</FontSize>
-                  <FontWeight>Bold</FontWeight>
-                </Style>
-                <Caption />
-              </MapColorScaleTitle>
-              <ColorBarBorderColor>LightGrey</ColorBarBorderColor>
-              <LabelFormat>#,##0.##</LabelFormat>
-              <HideEndLabels>false</HideEndLabels>
-              <NoDataText>No data</NoDataText>
-              <Position>LeftBottom</Position>
-              <DockOutsideViewport>false</DockOutsideViewport>
-              <Style>
-                <Border>
-                  <Color>#00ffffff</Color>
-                  <Style>None</Style>
-                </Border>
-                <BackgroundColor>#40000000</BackgroundColor>
-                <BackgroundGradientType>None</BackgroundGradientType>
-                <BackgroundGradientEndColor>#00ffffff</BackgroundGradientEndColor>
-                <FontSize>8pt</FontSize>
-                <Color>White</Color>
-                <ShadowOffset>0pt</ShadowOffset>
-              </Style>
-              <LeftMargin>2pt</LeftMargin>
-              <RightMargin>2pt</RightMargin>
-              <TopMargin>2pt</TopMargin>
-              <BottomMargin>2pt</BottomMargin>
-            </MapColorScale>
-            <MapBorderSkin>
-              <Style>
-                <Border />
-                <BackgroundColor>Gray</BackgroundColor>
-                <BackgroundGradientType>None</BackgroundGradientType>
-                <BackgroundGradientEndColor>White</BackgroundGradientEndColor>
-                <Color>White</Color>
-              </Style>
-            </MapBorderSkin>
-            <Top>8.9221cm</Top>
-            <Height>11.84326cm</Height>
-            <Width>17.38125cm</Width>
-            <ZIndex>1</ZIndex>
-            <Style>
-              <Border>
-                <Color>Gray</Color>
-                <Style>None</Style>
-              </Border>
-              <BackgroundColor>White</BackgroundColor>
-              <BackgroundGradientType>None</BackgroundGradientType>
-              <BackgroundGradientEndColor>White</BackgroundGradientEndColor>
-            </Style>
-          </Map>
         </ReportItems>
         <Height>8.40451in</Height>
         <Style />
@@ -542,10 +962,123 @@
       </Page>
     </ReportSection>
   </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="pANo">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>2020</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Ano</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>2020</Value>
+            <Label>2020</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="pMes">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>10</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Mês</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>1</Value>
+            <Label>Janeiro</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2</Value>
+            <Label>Fevereiro</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>3</Value>
+            <Label>Março</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>4</Value>
+            <Label>Abril</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>5</Value>
+            <Label>Maio</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>6</Value>
+            <Label>Junho</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>7</Value>
+            <Label>Julho</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>8</Value>
+            <Label>Agosto</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>9</Value>
+            <Label>Setembro</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>10</Value>
+            <Label>Outubro</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>11</Value>
+            <Label>Novembro</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>12</Value>
+            <Label>Dezembro</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="pCodVend">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>6</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Vendedor</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>ds_vendedores</DataSetName>
+          <ValueField>CODVEND</ValueField>
+          <LabelField>APELIDO</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+  </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
       <NumberOfColumns>4</NumberOfColumns>
       <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>pANo</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>pMes</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>pCodVend</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
     </GridLayoutDefinition>
   </ReportParametersLayout>
   <rd:ReportUnitType>Cm</rd:ReportUnitType>

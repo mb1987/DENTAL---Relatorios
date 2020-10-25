@@ -33,12 +33,16 @@
 			FAT.VENDEDOR, 
 			SUM(FAT.TOTAL_FAT_CONSUMO) TOTAL_FAT_CONSUMO, 
 			SUM(FAT.TOTAL_DEV_CONSUMO) TOTAL_DEV_CONSUMO, 
+			SUM(FAT.TOTAL_BONIF_CONSUMO) TOTAL_BONIF_CONSUMO,
+			SUM(FAT.TOTAL_BRINDE_CONSUMO) TOTAL_BRINDE_CONSUMO,
 			SUM(FAT.TOTAL_CONSUMO) TOTAL_CONSUMO, 
 			ISNULL(METAS.META_PROTESE_DIA,0) META_PROTESE_DIA,
 			SUM(FAT.TOTAL_FAT_CAD) TOTAL_FAT_CAD, 
 			SUM(FAT.TOTAL_DEV_CAD) TOTAL_DEV_CAD, 
 			SUM(FAT.TOTAL_CAD) TOTAL_CAD,
-ISNULL(METAS.META_CAD_DIA,0) META_CAD_DIA
+			SUM(FAT.TOTAL_BONIF_CAD) TOTAL_BONIF_CAD,
+			SUM(FAT.TOTAL_BRINDE_CAD)TOTAL_BRINDE_CAD,
+			ISNULL(METAS.META_CAD_DIA,0) META_CAD_DIA
 		FROM (
 			SELECT 
 					RESUMO.DATA,
@@ -50,13 +54,15 @@ ISNULL(METAS.META_CAD_DIA,0) META_CAD_DIA
 
 					TOTAL_FAT_CONSUMO = CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL(SUM(RESUMO.TOTAL_FAT),0) ELSE 0 END,
 					TOTAL_DEV_CONSUMO = CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL(SUM(RESUMO.TOTAL_DEV),0) ELSE 0 END,
+					TOTAL_BONIF_CONSUMO = CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL(SUM(RESUMO.TOTAL_BONIF),0) ELSE 0 END,
+					TOTAL_BRINDE_CONSUMO = CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL(SUM(RESUMO.TOTAL_BRINDE),0) ELSE 0 END,
 					TOTAL_CONSUMO =	  CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL((SUM(RESUMO.TOTAL_FAT)-SUM(RESUMO.TOTAL_DEV)) ,0)ELSE 0 END ,
 
 					TOTAL_FAT_CAD = CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL(SUM(RESUMO.TOTAL_FAT),0) ELSE 0 END,
 					TOTAL_DEV_CAD = CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL(SUM(RESUMO.TOTAL_DEV),0) ELSE 0 END,
+					TOTAL_BONIF_CAD = CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL(SUM(RESUMO.TOTAL_BONIF),0) ELSE 0 END,
+					TOTAL_BRINDE_CAD = CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL(SUM(RESUMO.TOTAL_BRINDE),0) ELSE 0 END,
 					TOTAL_CAD =	  CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL((SUM(RESUMO.TOTAL_FAT)-SUM(RESUMO.TOTAL_DEV)) ,0)ELSE 0 END 
-
-
 				FROM (SELECT
 								YEAR(TGFCAB.DTNEG) AS 'ANO',
 								MONTH(TGFCAB.DTNEG) AS 'MES',
@@ -66,7 +72,9 @@ ISNULL(METAS.META_CAD_DIA,0) META_CAD_DIA
 								TGFCAB.DTNEG AS 'DATA',
 								CASE WHEN TGFPRO.CODGRUPOPROD NOT LIKE '503%' THEN 'CONSUMO' ELSE 'CAD' END  CATEGORIA,
 								SUM(TGFITE.VLRTOT - TGFITE.VLRDESC) AS 'TOTAL_FAT',
-								'TOTAL_DEV'= 0.00
+								'TOTAL_DEV'= 0.00,
+								'TOTAL_BONIF'=0.00,
+								'TOTAL_BRINDE'=0
 							FROM sankhya.TGFCAB 
 							JOIN sankhya.TGFITE ON (TGFITE.NUNOTA=TGFCAB.NUNOTA)
 							JOIN sankhya.TGFPRO ON (TGFPRO.CODPROD=TGFITE.CODPROD)
@@ -93,7 +101,9 @@ ISNULL(METAS.META_CAD_DIA,0) META_CAD_DIA
 								TGFCAB.DTENTSAI AS 'DATA',
 								CASE WHEN TGFPRO.CODGRUPOPROD NOT LIKE '503%' THEN 'CONSUMO' ELSE 'CAD' END  CATEGORIA,
 								'TOTAL_FAT'= 0.00,
-								SUM(TGFITE.VLRTOT - TGFITE.VLRDESC) AS 'TOTAL_DEV'
+								SUM(TGFITE.VLRTOT - TGFITE.VLRDESC) AS 'TOTAL_DEV',
+								'TOTAL_BONIF'=0,
+								'TOTAL_BRINDE'=0
 							FROM sankhya.TGFCAB 
 							JOIN sankhya.TGFITE ON (TGFITE.NUNOTA=TGFCAB.NUNOTA)
 							JOIN sankhya.TGFPRO ON (TGFPRO.CODPROD=TGFITE.CODPROD)
@@ -110,6 +120,31 @@ ISNULL(METAS.META_CAD_DIA,0) META_CAD_DIA
 								,TGFCAB.DTENTSAI
 								,TGFVEN.APELIDO
 								,TGFCAB.DTNEG
+					UNION ALL
+						SELECT
+							'ANO' = YEAR(t.AD_DTCONFIRMACAO) ,
+							'MES' = MONTH(t.AD_DTCONFIRMACAO),
+							'DIA' = DAY (t.AD_DTCONFIRMACAO) ,
+							'COD_VEND'= CASE WHEN t4.AD_TIPODENTAL='B' THEN 34 ELSE t.CODVEND END ,
+							'VENDEDOR' = CASE WHEN t4.AD_TIPODENTAL='B' THEN 'BALCÃO' ELSE LTRIM(RTRIM(t4.APELIDO))  END ,
+							'DATA'=	t.AD_DTCONFIRMACAO  ,
+							'CATEGORIA' = CASE WHEN t.CODVEND IN (72,86,95) THEN 'CAD' ELSE 'CONSUMO' END,
+							'TOTAL_FAT'= 0.00 ,
+							'TOTAL_DEV'= 0.00 ,
+							'TOTAL_BONIF'=CASE WHEN (t3.CODGRUPOPROD != 3000000) THEN SUM(t2.VLRTOT)-SUM(t2.VLRDESC) ELSE 0.0 END,
+							'TOTAL_BRINDE'=CASE WHEN (t3.CODGRUPOPROD=3000000 AND t.AD_DTCONFIRMACAO&gt;'21/10/2020') THEN SUM(t2.VLRTOT)-SUM(t2.VLRDESC) ELSE 0.0 END
+						FROM sankhya.TGFCAB t
+						JOIN sankhya.TGFITE t2 ON t.NUNOTA = t2.NUNOTA
+						JOIN sankhya.TGFPRO t3 ON t2.CODPROD = t3.CODPROD
+						JOIN sankhya.TGFVEN t4 ON t.CODVEND = t4.CODVEND
+						WHERE	t.CODTIPOPER IN (35)
+						AND t.AD_DTCONFIRMACAO &gt; '01/08/2020'
+						GROUP BY 
+							t.AD_DTCONFIRMACAO, 
+							t.CODVEND, 
+							t4.APELIDO,
+							t4.AD_TIPODENTAL,
+							t3.CODGRUPOPROD
 				) RESUMO
 			GROUP BY 
 				RESUMO.DATA
@@ -187,12 +222,20 @@ GROUP BY
           <DataField>TOTAL_DEV_CONSUMO</DataField>
           <rd:TypeName>System.Double</rd:TypeName>
         </Field>
+        <Field Name="TOTAL_BONIF_CONSUMO">
+          <DataField>TOTAL_BONIF_CONSUMO</DataField>
+          <rd:TypeName>System.Double</rd:TypeName>
+        </Field>
         <Field Name="TOTAL_CONSUMO">
           <DataField>TOTAL_CONSUMO</DataField>
           <rd:TypeName>System.Double</rd:TypeName>
         </Field>
         <Field Name="META_PROTESE_DIA">
           <DataField>META_PROTESE_DIA</DataField>
+          <rd:TypeName>System.Double</rd:TypeName>
+        </Field>
+        <Field Name="TOTAL_BRINDE_CONSUMO">
+          <DataField>TOTAL_BRINDE_CONSUMO</DataField>
           <rd:TypeName>System.Double</rd:TypeName>
         </Field>
         <Field Name="TOTAL_FAT_CAD">
@@ -217,8 +260,16 @@ GROUP BY
         <Field Name="ATG_META_CAD">
           <Value>=Fields!TOTAL_CAD.Value/Fields!META_CAD_DIA.Value</Value>
         </Field>
+        <Field Name="TOTAL_BONIF_CAD">
+          <DataField>TOTAL_BONIF_CAD</DataField>
+          <rd:TypeName>System.Double</rd:TypeName>
+        </Field>
         <Field Name="SLD_META_CONSUMO_DIA">
           <Value>=Fields!TOTAL_CONSUMO.Value-Fields!META_PROTESE_DIA.Value</Value>
+        </Field>
+        <Field Name="TOTAL_BRINDE_CAD">
+          <DataField>TOTAL_BRINDE_CAD</DataField>
+          <rd:TypeName>System.Double</rd:TypeName>
         </Field>
         <Field Name="SLD_META_CAD_DIA">
           <Value>=Fields!TOTAL_CAD.Value-Fields!META_CAD_DIA.Value</Value>
@@ -351,7 +402,7 @@ order by t.APELIDO</CommandText>
                   <Width>10.65082cm</Width>
                 </TablixColumn>
                 <TablixColumn>
-                  <Width>19.66764cm</Width>
+                  <Width>24.58379cm</Width>
                 </TablixColumn>
               </TablixColumns>
               <TablixRows>
@@ -1699,7 +1750,7 @@ order by t.APELIDO</CommandText>
                               <DataSetName>ds_Faturamento</DataSetName>
                               <Left>0.08382cm</Left>
                               <Height>7cm</Height>
-                              <Width>19.5cm</Width>
+                              <Width>24.49997cm</Width>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -1729,10 +1780,10 @@ order by t.APELIDO</CommandText>
                                 </Paragraph>
                               </Paragraphs>
                               <rd:DefaultName>Textbox73</rd:DefaultName>
-                              <Top>7.14111cm</Top>
+                              <Top>7.1122cm</Top>
                               <Left>0.13236cm</Left>
                               <Height>0.6cm</Height>
-                              <Width>19.53528cm</Width>
+                              <Width>24.45143cm</Width>
                               <ZIndex>1</ZIndex>
                               <Style>
                                 <Border>
@@ -1800,6 +1851,12 @@ order by t.APELIDO</CommandText>
                                   </TablixColumn>
                                   <TablixColumn>
                                     <Width>3.06289cm</Width>
+                                  </TablixColumn>
+                                  <TablixColumn>
+                                    <Width>2.5cm</Width>
+                                  </TablixColumn>
+                                  <TablixColumn>
+                                    <Width>2.5cm</Width>
                                   </TablixColumn>
                                   <TablixColumn>
                                     <Width>2.98539cm</Width>
@@ -1905,6 +1962,74 @@ order by t.APELIDO</CommandText>
                                               </Paragraph>
                                             </Paragraphs>
                                             <rd:DefaultName>TOTAL_DEV_CONSUMO</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="TOTAL_BONIF_CAD">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BONIF_CAD.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>TOTAL_BONIF_CAD</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="TOTAL_BRINDE_CAD">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BRINDE_CAD.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>TOTAL_BRINDE_CAD</rd:DefaultName>
                                             <Style>
                                               <Border>
                                                 <Style>None</Style>
@@ -2143,6 +2268,86 @@ order by t.APELIDO</CommandText>
                                               </Paragraph>
                                             </Paragraphs>
                                             <rd:DefaultName>Textbox24</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <TopBorder>
+                                                <Color>DimGray</Color>
+                                                <Style>Solid</Style>
+                                                <Width>1pt</Width>
+                                              </TopBorder>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="Textbox18">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BONIF_CAD.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <FontWeight>Bold</FontWeight>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>Textbox18</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <TopBorder>
+                                                <Color>DimGray</Color>
+                                                <Style>Solid</Style>
+                                                <Width>1pt</Width>
+                                              </TopBorder>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="Textbox9">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BRINDE_CAD.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <FontWeight>Bold</FontWeight>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>Textbox9</rd:DefaultName>
                                             <Style>
                                               <Border>
                                                 <Style>None</Style>
@@ -2423,6 +2628,92 @@ order by t.APELIDO</CommandText>
                                     <TablixHeader>
                                       <Size>0.6cm</Size>
                                       <CellContents>
+                                        <Textbox Name="Textbox11">
+                                          <CanGrow>true</CanGrow>
+                                          <KeepTogether>true</KeepTogether>
+                                          <Paragraphs>
+                                            <Paragraph>
+                                              <TextRuns>
+                                                <TextRun>
+                                                  <Value>Bonificações</Value>
+                                                  <Style>
+                                                    <FontFamily>Calibri</FontFamily>
+                                                    <FontWeight>Bold</FontWeight>
+                                                    <Color>DimGray</Color>
+                                                  </Style>
+                                                </TextRun>
+                                              </TextRuns>
+                                              <Style>
+                                                <TextAlign>Right</TextAlign>
+                                              </Style>
+                                            </Paragraph>
+                                          </Paragraphs>
+                                          <rd:DefaultName>Textbox11</rd:DefaultName>
+                                          <Style>
+                                            <Border>
+                                              <Style>None</Style>
+                                            </Border>
+                                            <BottomBorder>
+                                              <Color>DimGray</Color>
+                                              <Style>Double</Style>
+                                              <Width>1pt</Width>
+                                            </BottomBorder>
+                                            <PaddingLeft>2pt</PaddingLeft>
+                                            <PaddingRight>2pt</PaddingRight>
+                                            <PaddingTop>2pt</PaddingTop>
+                                            <PaddingBottom>2pt</PaddingBottom>
+                                          </Style>
+                                        </Textbox>
+                                      </CellContents>
+                                    </TablixHeader>
+                                  </TablixMember>
+                                  <TablixMember>
+                                    <TablixHeader>
+                                      <Size>0.6cm</Size>
+                                      <CellContents>
+                                        <Textbox Name="Textbox4">
+                                          <CanGrow>true</CanGrow>
+                                          <KeepTogether>true</KeepTogether>
+                                          <Paragraphs>
+                                            <Paragraph>
+                                              <TextRuns>
+                                                <TextRun>
+                                                  <Value>Brindes</Value>
+                                                  <Style>
+                                                    <FontFamily>Calibri</FontFamily>
+                                                    <FontWeight>Bold</FontWeight>
+                                                    <Color>DimGray</Color>
+                                                  </Style>
+                                                </TextRun>
+                                              </TextRuns>
+                                              <Style>
+                                                <TextAlign>Right</TextAlign>
+                                              </Style>
+                                            </Paragraph>
+                                          </Paragraphs>
+                                          <rd:DefaultName>Textbox4</rd:DefaultName>
+                                          <Style>
+                                            <Border>
+                                              <Style>None</Style>
+                                            </Border>
+                                            <BottomBorder>
+                                              <Color>DimGray</Color>
+                                              <Style>Double</Style>
+                                              <Width>1pt</Width>
+                                            </BottomBorder>
+                                            <PaddingLeft>2pt</PaddingLeft>
+                                            <PaddingRight>2pt</PaddingRight>
+                                            <PaddingTop>2pt</PaddingTop>
+                                            <PaddingBottom>2pt</PaddingBottom>
+                                          </Style>
+                                        </Textbox>
+                                      </CellContents>
+                                    </TablixHeader>
+                                  </TablixMember>
+                                  <TablixMember>
+                                    <TablixHeader>
+                                      <Size>0.6cm</Size>
+                                      <CellContents>
                                         <Textbox Name="Textbox14">
                                           <CanGrow>true</CanGrow>
                                           <KeepTogether>true</KeepTogether>
@@ -2644,7 +2935,7 @@ order by t.APELIDO</CommandText>
                               <Top>7.85331cm</Top>
                               <Left>0.16764cm</Left>
                               <Height>1.8cm</Height>
-                              <Width>19.41618cm</Width>
+                              <Width>24.41615cm</Width>
                               <ZIndex>2</ZIndex>
                               <Style>
                                 <Border>
@@ -4367,10 +4658,9 @@ order by t.APELIDO</CommandText>
                                 </Style>
                               </ChartNoDataMessage>
                               <DataSetName>ds_Faturamento</DataSetName>
-                              <Top>0cm</Top>
                               <Left>0.02411cm</Left>
                               <Height>7cm</Height>
-                              <Width>19.5cm</Width>
+                              <Width>24.55968cm</Width>
                               <Style>
                                 <Border>
                                   <Color>LightGrey</Color>
@@ -4403,7 +4693,7 @@ order by t.APELIDO</CommandText>
                               <Top>7.14473cm</Top>
                               <Left>0.08382cm</Left>
                               <Height>0.6cm</Height>
-                              <Width>19.5cm</Width>
+                              <Width>24.49997cm</Width>
                               <ZIndex>1</ZIndex>
                               <Style>
                                 <Border>
@@ -4472,6 +4762,12 @@ order by t.APELIDO</CommandText>
                                   </TablixColumn>
                                   <TablixColumn>
                                     <Width>3.08381cm</Width>
+                                  </TablixColumn>
+                                  <TablixColumn>
+                                    <Width>2.5cm</Width>
+                                  </TablixColumn>
+                                  <TablixColumn>
+                                    <Width>2.5cm</Width>
                                   </TablixColumn>
                                   <TablixColumn>
                                     <Width>3.00631cm</Width>
@@ -4577,6 +4873,74 @@ order by t.APELIDO</CommandText>
                                               </Paragraph>
                                             </Paragraphs>
                                             <rd:DefaultName>TOTAL_DEV_CONSUMO</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="TOTAL_BONIF_CONSUMO">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BONIF_CONSUMO.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>TOTAL_BONIF_CONSUMO</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="TOTAL_BRINDE_CONSUMO">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BRINDE_CONSUMO.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>TOTAL_BRINDE_CONSUMO</rd:DefaultName>
                                             <Style>
                                               <Border>
                                                 <Style>None</Style>
@@ -4810,6 +5174,84 @@ order by t.APELIDO</CommandText>
                                               </Paragraph>
                                             </Paragraphs>
                                             <rd:DefaultName>Textbox24</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <TopBorder>
+                                                <Color>DimGray</Color>
+                                                <Style>Solid</Style>
+                                              </TopBorder>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="Textbox29">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BONIF_CONSUMO.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <FontWeight>Bold</FontWeight>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>Textbox29</rd:DefaultName>
+                                            <Style>
+                                              <Border>
+                                                <Style>None</Style>
+                                              </Border>
+                                              <TopBorder>
+                                                <Color>DimGray</Color>
+                                                <Style>Solid</Style>
+                                              </TopBorder>
+                                              <PaddingLeft>2pt</PaddingLeft>
+                                              <PaddingRight>2pt</PaddingRight>
+                                              <PaddingTop>2pt</PaddingTop>
+                                              <PaddingBottom>2pt</PaddingBottom>
+                                            </Style>
+                                          </Textbox>
+                                        </CellContents>
+                                      </TablixCell>
+                                      <TablixCell>
+                                        <CellContents>
+                                          <Textbox Name="Textbox33">
+                                            <CanGrow>true</CanGrow>
+                                            <KeepTogether>true</KeepTogether>
+                                            <Paragraphs>
+                                              <Paragraph>
+                                                <TextRuns>
+                                                  <TextRun>
+                                                    <Value>=Sum(Fields!TOTAL_BRINDE_CONSUMO.Value)</Value>
+                                                    <Style>
+                                                      <FontFamily>Calibri</FontFamily>
+                                                      <FontWeight>Bold</FontWeight>
+                                                      <Format>#,0.00;(#,0.00)</Format>
+                                                    </Style>
+                                                  </TextRun>
+                                                </TextRuns>
+                                                <Style>
+                                                  <TextAlign>Right</TextAlign>
+                                                </Style>
+                                              </Paragraph>
+                                            </Paragraphs>
+                                            <rd:DefaultName>Textbox33</rd:DefaultName>
                                             <Style>
                                               <Border>
                                                 <Style>None</Style>
@@ -5090,6 +5532,94 @@ order by t.APELIDO</CommandText>
                                     <TablixHeader>
                                       <Size>0.6cm</Size>
                                       <CellContents>
+                                        <Textbox Name="Textbox20">
+                                          <CanGrow>true</CanGrow>
+                                          <KeepTogether>true</KeepTogether>
+                                          <Paragraphs>
+                                            <Paragraph>
+                                              <TextRuns>
+                                                <TextRun>
+                                                  <Value>Bonificações</Value>
+                                                  <Style>
+                                                    <FontFamily>Calibri</FontFamily>
+                                                    <FontWeight>Bold</FontWeight>
+                                                    <Color>DimGray</Color>
+                                                  </Style>
+                                                </TextRun>
+                                              </TextRuns>
+                                              <Style>
+                                                <TextAlign>Right</TextAlign>
+                                              </Style>
+                                            </Paragraph>
+                                          </Paragraphs>
+                                          <rd:DefaultName>Textbox20</rd:DefaultName>
+                                          <Style>
+                                            <Border>
+                                              <Color>DimGray</Color>
+                                              <Style>None</Style>
+                                            </Border>
+                                            <BottomBorder>
+                                              <Color>DimGray</Color>
+                                              <Style>Double</Style>
+                                              <Width>1pt</Width>
+                                            </BottomBorder>
+                                            <PaddingLeft>2pt</PaddingLeft>
+                                            <PaddingRight>2pt</PaddingRight>
+                                            <PaddingTop>2pt</PaddingTop>
+                                            <PaddingBottom>2pt</PaddingBottom>
+                                          </Style>
+                                        </Textbox>
+                                      </CellContents>
+                                    </TablixHeader>
+                                  </TablixMember>
+                                  <TablixMember>
+                                    <TablixHeader>
+                                      <Size>0.6cm</Size>
+                                      <CellContents>
+                                        <Textbox Name="Textbox30">
+                                          <CanGrow>true</CanGrow>
+                                          <KeepTogether>true</KeepTogether>
+                                          <Paragraphs>
+                                            <Paragraph>
+                                              <TextRuns>
+                                                <TextRun>
+                                                  <Value>Brindes</Value>
+                                                  <Style>
+                                                    <FontFamily>Calibri</FontFamily>
+                                                    <FontWeight>Bold</FontWeight>
+                                                    <Color>DimGray</Color>
+                                                  </Style>
+                                                </TextRun>
+                                              </TextRuns>
+                                              <Style>
+                                                <TextAlign>Right</TextAlign>
+                                              </Style>
+                                            </Paragraph>
+                                          </Paragraphs>
+                                          <rd:DefaultName>Textbox30</rd:DefaultName>
+                                          <Style>
+                                            <Border>
+                                              <Color>DimGray</Color>
+                                              <Style>None</Style>
+                                            </Border>
+                                            <BottomBorder>
+                                              <Color>DimGray</Color>
+                                              <Style>Double</Style>
+                                              <Width>1pt</Width>
+                                            </BottomBorder>
+                                            <PaddingLeft>2pt</PaddingLeft>
+                                            <PaddingRight>2pt</PaddingRight>
+                                            <PaddingTop>2pt</PaddingTop>
+                                            <PaddingBottom>2pt</PaddingBottom>
+                                          </Style>
+                                        </Textbox>
+                                      </CellContents>
+                                    </TablixHeader>
+                                  </TablixMember>
+                                  <TablixMember>
+                                    <TablixHeader>
+                                      <Size>0.6cm</Size>
+                                      <CellContents>
                                         <Textbox Name="Textbox12">
                                           <CanGrow>true</CanGrow>
                                           <KeepTogether>true</KeepTogether>
@@ -5313,7 +5843,7 @@ order by t.APELIDO</CommandText>
                               <Top>7.89411cm</Top>
                               <Left>0.08382cm</Left>
                               <Height>1.8cm</Height>
-                              <Width>19.5cm</Width>
+                              <Width>24.5cm</Width>
                               <ZIndex>2</ZIndex>
                               <Style>
                                 <Border>
@@ -5691,6 +6221,7 @@ order by t.APELIDO</CommandText>
                             </Border>
                           </Style>
                         </Rectangle>
+                        <rd:Selected>true</rd:Selected>
                       </CellContents>
                     </TablixCell>
                   </TablixCells>
@@ -5733,8 +6264,8 @@ order by t.APELIDO</CommandText>
             <DataSetName>ds_Faturamento</DataSetName>
             <Top>0.3175cm</Top>
             <Left>0.2434cm</Left>
-            <Height>29.62229cm</Height>
-            <Width>30.31846cm</Width>
+            <Height>29.62228cm</Height>
+            <Width>35.23461cm</Width>
             <Style>
               <Border>
                 <Style>None</Style>
@@ -5745,7 +6276,7 @@ order by t.APELIDO</CommandText>
         <Height>29.93979cm</Height>
         <Style />
       </Body>
-      <Width>12.03223in</Width>
+      <Width>13.96772in</Width>
       <Page>
         <PageHeader>
           <Height>0.99729cm</Height>
@@ -5832,6 +6363,7 @@ order by t.APELIDO</CommandText>
                 </Paragraph>
               </Paragraphs>
               <rd:DefaultName>ExecutionTime</rd:DefaultName>
+              <Top>0cm</Top>
               <Height>0.6cm</Height>
               <Width>30.56186cm</Width>
               <Style>

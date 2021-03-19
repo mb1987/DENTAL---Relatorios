@@ -21,7 +21,7 @@
 		t.AD_TIPODENTAL
 from sankhya.TGFVEN t
 WHERE t.ATIVO = 'S'
-AND t.CODVEND NOT IN (0,76,2000,109)</CommandText>
+AND t.CODVEND NOT IN (0,76,2000)</CommandText>
       </Query>
       <Fields>
         <Field Name="CODVEND">
@@ -55,20 +55,7 @@ AND t.CODVEND NOT IN (0,76,2000,109)</CommandText>
 	ANO = YEAR(am.DATA ) ,
 	MES = MONTH(am.DATA ) ,
 	DIAS_UTEIS = am.DIASUTEIS,
-	DIAS_TRABALHADOS = (SELECT COUNT(DIAS) FROM (SELECT distinct
-													DAY(TGFCAB.DTNEG) AS 'DIAS'
-												FROM TGFCAB
-												JOIN TGFITE ON (TGFITE.NUNOTA=TGFCAB.NUNOTA)
-												JOIN TGFPRO ON (TGFPRO.CODPROD=TGFITE.CODPROD)
-												JOIN TGFVEN ON (TGFVEN.CODVEND=TGFCAB.CODVEND)
-												WHERE TGFCAB.CODTIPOPER IN (5,8,74,46)
-													AND month(TGFCAB.DTNEG)=@pMes
-													AND year(TGFCAB.DTNEG)=@pAno
-													AND TGFVEN.AD_TIPODENTAL IN ('T','B')
-													AND TGFVEN.CODVEND NOT IN (0,76,2000, 109)
-
-													AND TGFCAB.NUMNOTA &lt;&gt; 0
-													AND TGFITE.USOPROD NOT IN ('D')) AS A),
+DIAS_TRABALHADOS = (SELECT COUNT(DIAS) FROM (SELECT DISTINCT DAY(t.DTNEG) DIAS FROM sankhya.TGFCAB t WHERE t.TIPMOV='V' AND YEAR(T.DTNEG)=@pAno AND MONTH(T.DTNEG)=@pMes) AS A),
 	DATA_INICIO = am.DATA ,
 	DATA_FIM = DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,am.DATA )+1,0)),
 	META_PROTESE = am.VLRPROTESE ,
@@ -137,12 +124,10 @@ LEFT JOIN (SELECT
 							JOIN sankhya.TGFPRO ON (TGFPRO.CODPROD=TGFITE.CODPROD)
 							JOIN sankhya.TGFVEN ON (TGFVEN.CODVEND=TGFCAB.CODVEND)
 							WHERE TGFCAB.CODTIPOPER IN (5,8,74,46)
-								AND TGFCAB.DTNEG &gt; '10/01/2021'
+								AND TGFCAB.DTNEG &gt; '01/08/2020'
 								AND TGFVEN.AD_TIPODENTAL IN ('T','B')
 								AND TGFCAB.NUMNOTA &lt;&gt; 0
 								AND TGFITE.USOPROD NOT IN ('D')
-								AND TGFVEN.CODVEND NOT IN (0,76,2000, 109)
-
 								--AND TGFPRO.CODGRUPOPROD NOT LIKE '503%'
 							GROUP BY 
 									TGFCAB.CODVEND
@@ -167,11 +152,10 @@ LEFT JOIN (SELECT
 							JOIN sankhya.TGFPRO ON (TGFPRO.CODPROD=TGFITE.CODPROD)
 							JOIN sankhya.TGFVEN ON (TGFVEN.CODVEND=TGFCAB.CODVEND)
 							WHERE TGFCAB.CODTIPOPER IN (14,9,19)		
-								AND TGFCAB.DTENTSAI &gt; '10/01/2021'
+								AND TGFCAB.DTENTSAI &gt; '01/08/2020'
 								AND TGFVEN.AD_TIPODENTAL IN ( 'T','B')
 								AND TGFCAB.NUMNOTA &lt;&gt; 0
 								AND TGFITE.USOPROD NOT IN ('D')
-								AND TGFVEN.CODVEND NOT IN (0,76,2000, 109)
 								--AND TGFPRO.CODGRUPOPROD NOT LIKE '503%'
 							GROUP BY 
 								TGFCAB.CODVEND
@@ -197,7 +181,6 @@ LEFT JOIN (SELECT
 			FAT.COD_VENDEDOR, 
 			FAT.VENDEDOR) AS FAT ON FAT.ANO=YEAR(am.DATA) AND FAT.MES=MONTH(am.DATA) AND FAT.COD_VENDEDOR=am.CODVEND
 WHERE YEAR(am.DATA ) =@pAno AND MONTH(am.DATA ) = @pMes
-and am.CODVEND NOT IN (0,76,2000, 109)
 GROUP BY 
 	am.CODVEND,
 	t.APELIDO,
@@ -413,12 +396,10 @@ LEFT JOIN (SELECT
 
 			FROM sankhya.AD_METADENTAL am
 			JOIN sankhya.TGFVEN t ON am.CODVEND = t.CODVEND
-			WHERE  T.CODVEND NOT IN (0,76,2000, 109)
 			GROUP BY 
 				am.DATA,   
 				am.DIASUTEIS) METAS ON  METAS.ANO=FAT.ANO AND METAS.MES=FAT.MES
-WHERE fat.ANO= @pAno 
-AND fat.MES=@pMes
+WHERE fat.ANO=@pAno AND fat.MES=@pMes
 GROUP BY 	
 			FAT.DATA, 
 			FAT.ANO, 
@@ -491,181 +472,6 @@ GROUP BY
         </Field>
         <Field Name="ATG_META_CAD">
           <Value>=Fields!TOTAL_CAD.Value/Fields!META_CAD_DIA.Value</Value>
-        </Field>
-      </Fields>
-    </DataSet>
-    <DataSet Name="ds_MetaGeral">
-      <Query>
-        <DataSourceName>ds_Sankhya_Prod</DataSourceName>
-        <QueryParameters>
-          <QueryParameter Name="@pAno">
-            <Value>=Parameters!pAno.Value</Value>
-          </QueryParameter>
-          <QueryParameter Name="@pMes">
-            <Value>=Parameters!pMes.Value</Value>
-          </QueryParameter>
-        </QueryParameters>
-        <CommandText>SELECT FAT.DATA,
-			FAT.ANO, 
-			FAT.MES, 
-			SUM(FAT.TOTAL_FAT_CONSUMO) TOTAL_FAT_CONSUMO, 
-			SUM(FAT.TOTAL_DEV_CONSUMO) TOTAL_DEV_CONSUMO, 
-			SUM(FAT.TOTAL_CONSUMO) TOTAL_CONSUMO, 
-			METAS.META_PROTESE_DIA,
-			METAS.META_PROTESE,
-			SUM(FAT.TOTAL_FAT_CAD) TOTAL_FAT_CAD, 
-			SUM(FAT.TOTAL_DEV_CAD) TOTAL_DEV_CAD, 
-			SUM(FAT.TOTAL_CAD) TOTAL_CAD,
-			METAS.META_CAD_DIA,
-			METAS.META_CAD
-		FROM (
-			SELECT 
-					RESUMO.DATA,
-					RESUMO.ANO AS 'ANO',
-					RESUMO.MES AS 'MES',
-					RESUMO.DIA AS 'DIA',
-
-					TOTAL_FAT_CONSUMO = CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL(SUM(RESUMO.TOTAL_FAT),0) ELSE 0 END,
-					TOTAL_DEV_CONSUMO = CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL(SUM(RESUMO.TOTAL_DEV),0) ELSE 0 END,
-					TOTAL_CONSUMO =	  CASE WHEN RESUMO.CATEGORIA='CONSUMO' THEN ISNULL((SUM(RESUMO.TOTAL_FAT)-SUM(RESUMO.TOTAL_DEV)) ,0)ELSE 0 END ,
-
-					TOTAL_FAT_CAD = CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL(SUM(RESUMO.TOTAL_FAT),0) ELSE 0 END,
-					TOTAL_DEV_CAD = CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL(SUM(RESUMO.TOTAL_DEV),0) ELSE 0 END,
-					TOTAL_CAD =	  CASE WHEN RESUMO.CATEGORIA='CAD' THEN ISNULL((SUM(RESUMO.TOTAL_FAT)-SUM(RESUMO.TOTAL_DEV)) ,0)ELSE 0 END 
-
-
-				FROM (SELECT
-								YEAR(TGFCAB.DTNEG) AS 'ANO',
-								MONTH(TGFCAB.DTNEG) AS 'MES',
-								DAY(TGFCAB.DTNEG) AS 'DIA', 
-								TGFCAB.DTNEG AS 'DATA',
-								CASE WHEN TGFPRO.CODGRUPOPROD NOT LIKE '503%' THEN 'CONSUMO' ELSE 'CAD' END  CATEGORIA,
-								SUM(TGFITE.VLRTOT - TGFITE.VLRDESC) AS 'TOTAL_FAT',
-								'TOTAL_DEV'= 0.00
-							FROM TGFCAB
-							JOIN TGFITE ON (TGFITE.NUNOTA=TGFCAB.NUNOTA)
-							JOIN TGFPRO ON (TGFPRO.CODPROD=TGFITE.CODPROD)
-							JOIN TGFVEN ON (TGFVEN.CODVEND=TGFCAB.CODVEND)
-							WHERE TGFCAB.CODTIPOPER IN (5,8,74,46)
-								AND TGFCAB.DTNEG &gt; '01/08/2020'
-								AND TGFVEN.AD_TIPODENTAL IN ('T','B')
-								AND TGFCAB.NUMNOTA &lt;&gt; 0
-								AND TGFITE.USOPROD NOT IN ('D')
-								--AND TGFPRO.CODGRUPOPROD NOT LIKE '503%'
-							GROUP BY 
-								TGFCAB.DTNEG
-									,TGFPRO.CODGRUPOPROD
-						UNION ALL
-							SELECT
-								YEAR(TGFCAB.DTENTSAI) AS 'ANO',
-								MONTH(TGFCAB.DTENTSAI) AS 'MES',
-								DAY(TGFCAB.DTENTSAI) AS 'DIA', 
-								TGFCAB.DTENTSAI AS 'DATA',
-								CASE WHEN TGFPRO.CODGRUPOPROD NOT LIKE '503%' THEN 'CONSUMO' ELSE 'CAD' END  CATEGORIA,
-								'TOTAL_FAT'= 0.00,
-								SUM(TGFITE.VLRTOT - TGFITE.VLRDESC) AS 'TOTAL_DEV'
-							FROM TGFCAB
-							JOIN TGFITE ON (TGFITE.NUNOTA=TGFCAB.NUNOTA)
-							JOIN TGFPRO ON (TGFPRO.CODPROD=TGFITE.CODPROD)
-							JOIN TGFVEN ON (TGFVEN.CODVEND=TGFCAB.CODVEND)
-							WHERE TGFCAB.CODTIPOPER IN (14,9,19)		
-								AND TGFCAB.DTENTSAI &gt; '01/08/2020'
-								AND TGFVEN.AD_TIPODENTAL IN ( 'T','B')
-								AND TGFCAB.NUMNOTA &lt;&gt; 0
-								AND TGFITE.USOPROD NOT IN ('D')
-								--AND TGFPRO.CODGRUPOPROD NOT LIKE '503%'
-							GROUP BY 
-								TGFPRO.CODGRUPOPROD
-								,TGFCAB.DTENTSAI
-								,TGFCAB.DTNEG
-				) RESUMO
-			GROUP BY 
-				RESUMO.DATA
-				, RESUMO.ANO
-				, RESUMO.MES
-				, RESUMO.DIA
-				,RESUMO.CATEGORIA) AS FAT
-LEFT JOIN (SELECT 
-				ANO = YEAR(am.DATA ) ,
-				MES = MONTH(am.DATA ) ,
-				DIAS_UTEIS = am.DIASUTEIS,
-				DATA_INICIO = am.DATA ,
-				DATA_FIM = DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,am.DATA )+1,0)),
-				META_PROTESE = SUM(am.VLRPROTESE) ,
-				META_PROTESE_DIA = SUM(am.VLRPROTESE)/am.DIASUTEIS,
-				META_CAD = SUM(am.VLRCAD),
-				META_CAD_DIA = SUM(am.VLRCAD)/am.DIASUTEIS
-
-			FROM sankhya.AD_METADENTAL am
-			JOIN sankhya.TGFVEN t ON am.CODVEND = t.CODVEND
-			WHERE  T.CODVEND =   109
-			GROUP BY 
-				am.DATA,   
-				am.DIASUTEIS) METAS ON  METAS.ANO=FAT.ANO AND METAS.MES=FAT.MES
-WHERE fat.ANO= @pAno 
-AND fat.MES=@pMes
-GROUP BY 	
-			FAT.DATA, 
-			FAT.ANO, 
-			FAT.MES, 
-			FAT.DIA,
-			METAS.META_PROTESE_DIA,
-			METAS.META_PROTESE,
-			METAS.META_CAD_DIA,
-			METAS.META_CAD</CommandText>
-      </Query>
-      <Fields>
-        <Field Name="DATA">
-          <DataField>DATA</DataField>
-          <rd:TypeName>System.DateTime</rd:TypeName>
-        </Field>
-        <Field Name="ANO">
-          <DataField>ANO</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="MES">
-          <DataField>MES</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
-        </Field>
-        <Field Name="TOTAL_FAT_CONSUMO">
-          <DataField>TOTAL_FAT_CONSUMO</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="TOTAL_DEV_CONSUMO">
-          <DataField>TOTAL_DEV_CONSUMO</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="TOTAL_CONSUMO">
-          <DataField>TOTAL_CONSUMO</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="META_PROTESE_DIA">
-          <DataField>META_PROTESE_DIA</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="META_PROTESE">
-          <DataField>META_PROTESE</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="TOTAL_FAT_CAD">
-          <DataField>TOTAL_FAT_CAD</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="TOTAL_DEV_CAD">
-          <DataField>TOTAL_DEV_CAD</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="TOTAL_CAD">
-          <DataField>TOTAL_CAD</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="META_CAD_DIA">
-          <DataField>META_CAD_DIA</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
-        </Field>
-        <Field Name="META_CAD">
-          <DataField>META_CAD</DataField>
-          <rd:TypeName>System.Double</rd:TypeName>
         </Field>
       </Fields>
     </DataSet>
@@ -988,15 +794,6 @@ GROUP BY
               <Value />
             </TopImage>
             <DataSetName>ds_ExtFat</DataSetName>
-            <Filters>
-              <Filter>
-                <FilterExpression>=Fields!DATA.Value</FilterExpression>
-                <Operator>GreaterThanOrEqual</Operator>
-                <FilterValues>
-                  <FilterValue DataType="DateTime">01/11/2021 00:00:00</FilterValue>
-                </FilterValues>
-              </Filter>
-            </Filters>
             <Top>33.76111mm</Top>
             <Left>141.10002mm</Left>
             <Height>52.46944mm</Height>
@@ -1321,7 +1118,7 @@ GROUP BY
               <Source>External</Source>
               <Value />
             </TopImage>
-            <DataSetName>ds_MetaGeral</DataSetName>
+            <DataSetName>ds_ExtFat</DataSetName>
             <Top>33.76111mm</Top>
             <Left>30.89584mm</Left>
             <Height>52.46944mm</Height>
@@ -2600,15 +2397,6 @@ IIF(Fields!ATG_META_CAD.Value&gt;=0.7,"Coral",
               </TablixMembers>
             </TablixRowHierarchy>
             <DataSetName>ds_ExtFat</DataSetName>
-            <Filters>
-              <Filter>
-                <FilterExpression>=Fields!DATA.Value</FilterExpression>
-                <Operator>GreaterThanOrEqual</Operator>
-                <FilterValues>
-                  <FilterValue DataType="DateTime">01/11/2021 00:00:00</FilterValue>
-                </FilterValues>
-              </Filter>
-            </Filters>
             <Top>153.31472mm</Top>
             <Left>0mm</Left>
             <Height>24mm</Height>
@@ -3137,16 +2925,7 @@ IIF(Fields!ATG_META_CAD.Value&gt;=0.7,"Coral",
                 <VerticalAlign>Top</VerticalAlign>
               </Style>
             </ChartNoDataMessage>
-            <DataSetName>ds_MetaGeral</DataSetName>
-            <Filters>
-              <Filter>
-                <FilterExpression>=Fields!DATA.Value</FilterExpression>
-                <Operator>GreaterThanOrEqual</Operator>
-                <FilterValues>
-                  <FilterValue DataType="DateTime">01/11/2021 00:00:00</FilterValue>
-                </FilterValues>
-              </Filter>
-            </Filters>
+            <DataSetName>ds_ExtFat</DataSetName>
             <Top>87.64167mm</Top>
             <Left>30.89584mm</Left>
             <Height>63.90916mm</Height>
@@ -3607,15 +3386,6 @@ IIF(Fields!ATG_META_CAD.Value&gt;=0.7,"Coral",
               </Style>
             </ChartNoDataMessage>
             <DataSetName>ds_ExtFat</DataSetName>
-            <Filters>
-              <Filter>
-                <FilterExpression>=Fields!DATA.Value</FilterExpression>
-                <Operator>GreaterThanOrEqual</Operator>
-                <FilterValues>
-                  <FilterValue DataType="DateTime">01/11/2021 00:00:00</FilterValue>
-                </FilterValues>
-              </Filter>
-            </Filters>
             <Top>87.64167mm</Top>
             <Left>141.10002mm</Left>
             <Height>63.90916mm</Height>

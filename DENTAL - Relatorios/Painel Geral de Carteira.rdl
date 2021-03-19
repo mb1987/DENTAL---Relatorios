@@ -171,7 +171,7 @@
                           WHERE  tgftel.tipcham NOT IN ( 'C', 'D' ) 
                                  AND tgftel.pendente = 'S' 
                                  AND tgftel.codusu = tsiusu.codusu 
-                                 AND CONVERT(DATE, tgftel.dhproxcham) &lt;= CONVERT(DATE, Getdate())) 
+                                 AND CONVERT(DATE, tgftel.dhproxcham) &lt; CONVERT(DATE, Getdate())) 
 FROM   tgfven 
 JOIN tsiusu ON ( tgfven.codvend = tsiusu.codvend AND tsiusu.CODGRUPO=1) 
 WHERE  tgfven.ativo = 'S' 
@@ -3496,7 +3496,7 @@ Fields!COBERTURA_NOVOS_CLIENTES.Value/Fields!NOVOS_CLIENTES.Value,0)</Value>
             <Top>0.60534in</Top>
             <Left>0.03528cm</Left>
             <Height>1.21292in</Height>
-            <Width>13.3125in</Width>
+            <Width>13.31249in</Width>
             <ZIndex>1</ZIndex>
             <Style />
           </Tablix>
@@ -3645,7 +3645,7 @@ Fields!COBERTURA_NOVOS_CLIENTES.Value/Fields!NOVOS_CLIENTES.Value,0)</Value>
             <KeepTogether>true</KeepTogether>
             <Top>2.01471in</Top>
             <Left>1.75875in</Left>
-            <Height>1.01427in</Height>
+            <Height>1.01428in</Height>
             <Width>3.0569in</Width>
             <ZIndex>4</ZIndex>
             <Style>

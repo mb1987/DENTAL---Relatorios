@@ -174,7 +174,7 @@
                           WHERE  tgftel.tipcham NOT IN ( 'C', 'D' ) 
                                  AND tgftel.pendente = 'S' 
                                  AND tgftel.codusu = tsiusu.codusu 
-                                 AND CONVERT(DATE, tgftel.dhproxcham) &lt;= CONVERT(DATE, Getdate())) ,
+                                 AND CONVERT(DATE, tgftel.dhproxcham) &lt; CONVERT(DATE, Getdate())) ,
 		'TOT_TLMKT'= (SELECT COUNT(TGFTEL.NUREL) 
 						FROM TGFTEL
 							WHERE TGFTEL.TIPCHAM NOT IN ('C','D')
@@ -1455,7 +1455,7 @@ order by t.APELIDO</CommandText>
             <Top>8.56933cm</Top>
             <Left>10.30491cm</Left>
             <Height>3.46687cm</Height>
-            <Width>11.99792cm</Width>
+            <Width>11.99793cm</Width>
             <ZIndex>2</ZIndex>
             <Style>
               <Border>
@@ -1802,7 +1802,7 @@ order by t.APELIDO</CommandText>
             <DataSetName>ds_carteira</DataSetName>
             <Top>8.53405cm</Top>
             <Height>2.67312cm</Height>
-            <Width>10.04cm</Width>
+            <Width>10.03999cm</Width>
             <ZIndex>3</ZIndex>
             <Style>
               <Border>

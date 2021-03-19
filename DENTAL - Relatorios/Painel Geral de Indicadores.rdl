@@ -1642,7 +1642,7 @@ ORDER BY
               </Style>
             </ChartNoDataMessage>
             <DataSetName>ds_PMV_TLMKT</DataSetName>
-            <Top>13.46292in</Top>
+            <Top>15.015in</Top>
             <Height>3.6875in</Height>
             <Width>8.8125in</Width>
             <ZIndex>4</ZIndex>
@@ -1677,9 +1677,6 @@ ORDER BY
             <ChartSeriesHierarchy>
               <ChartMembers>
                 <ChartMember>
-                  <Label>VLR CTE</Label>
-                </ChartMember>
-                <ChartMember>
                   <Label>VLR PAGO DENTAL</Label>
                 </ChartMember>
                 <ChartMember>
@@ -1689,46 +1686,6 @@ ORDER BY
             </ChartSeriesHierarchy>
             <ChartData>
               <ChartSeriesCollection>
-                <ChartSeries Name="VLR_CTE">
-                  <ChartDataPoints>
-                    <ChartDataPoint>
-                      <ChartDataPointValues>
-                        <Y>=Sum(Fields!VLR_CTE.Value)</Y>
-                      </ChartDataPointValues>
-                      <ChartDataLabel>
-                        <Style>
-                          <Format>#,0;(#,0)</Format>
-                        </Style>
-                        <UseValueAsLabel>true</UseValueAsLabel>
-                        <Visible>true</Visible>
-                      </ChartDataLabel>
-                      <Style />
-                      <ChartMarker>
-                        <Style />
-                      </ChartMarker>
-                      <DataElementOutput>Output</DataElementOutput>
-                    </ChartDataPoint>
-                  </ChartDataPoints>
-                  <Style />
-                  <ChartEmptyPoints>
-                    <Style />
-                    <ChartMarker>
-                      <Style />
-                    </ChartMarker>
-                    <ChartDataLabel>
-                      <Style />
-                    </ChartDataLabel>
-                  </ChartEmptyPoints>
-                  <ChartItemInLegend>
-                    <LegendText>Valor CTE</LegendText>
-                  </ChartItemInLegend>
-                  <ValueAxisName>Primary</ValueAxisName>
-                  <CategoryAxisName>Primary</CategoryAxisName>
-                  <ChartSmartLabel>
-                    <CalloutLineColor>Black</CalloutLineColor>
-                    <MinMovingDistance>0pt</MinMovingDistance>
-                  </ChartSmartLabel>
-                </ChartSeries>
                 <ChartSeries Name="VLR_PAGO_DENTAL">
                   <ChartDataPoints>
                     <ChartDataPoint>
@@ -1749,6 +1706,8 @@ ORDER BY
                       <DataElementOutput>Output</DataElementOutput>
                     </ChartDataPoint>
                   </ChartDataPoints>
+                  <Type>Bar</Type>
+                  <Subtype>Stacked</Subtype>
                   <Style />
                   <ChartEmptyPoints>
                     <Style />
@@ -1778,6 +1737,7 @@ ORDER BY
                       <ChartDataLabel>
                         <Style>
                           <Format>#,0;(#,0)</Format>
+                          <Color>White</Color>
                         </Style>
                         <UseValueAsLabel>true</UseValueAsLabel>
                         <Visible>true</Visible>
@@ -1789,6 +1749,8 @@ ORDER BY
                       <DataElementOutput>Output</DataElementOutput>
                     </ChartDataPoint>
                   </ChartDataPoints>
+                  <Type>Bar</Type>
+                  <Subtype>Stacked</Subtype>
                   <Style />
                   <ChartEmptyPoints>
                     <Style />
@@ -2045,6 +2007,11 @@ ORDER BY
                   <BackgroundColor>#00ffffff</BackgroundColor>
                   <BackgroundGradientType>None</BackgroundGradientType>
                 </Style>
+                <ChartInnerPlotPosition>
+                  <Left>7.776</Left>
+                  <Height>93.606</Height>
+                  <Width>90</Width>
+                </ChartInnerPlotPosition>
               </ChartArea>
             </ChartAreas>
             <ChartLegends>
@@ -2068,7 +2035,7 @@ ORDER BY
             </ChartLegends>
             <ChartTitles>
               <ChartTitle Name="Default">
-                <Caption>Comparativo de Repasse de Valor de Frete</Caption>
+                <Caption>Comparativo de Repasse de Valor de Frete: Últimos  6 meses</Caption>
                 <Style>
                   <BackgroundGradientType>None</BackgroundGradientType>
                   <FontWeight>Bold</FontWeight>
@@ -2096,8 +2063,8 @@ ORDER BY
               </Style>
             </ChartNoDataMessage>
             <DataSetName>ds_Frete</DataSetName>
-            <Top>8.46402in</Top>
-            <Height>4.80792in</Height>
+            <Top>8.43625in</Top>
+            <Height>6.4375in</Height>
             <Width>8.8125in</Width>
             <ZIndex>5</ZIndex>
             <Style>
@@ -2110,11 +2077,12 @@ ORDER BY
             </Style>
           </Chart>
         </ReportItems>
-        <Height>17.15042in</Height>
+        <Height>18.7025in</Height>
         <Style />
       </Body>
       <Width>8.8125in</Width>
       <Page>
+        <PageHeight>1in</PageHeight>
         <LeftMargin>1in</LeftMargin>
         <RightMargin>1in</RightMargin>
         <TopMargin>1in</TopMargin>

@@ -53,6 +53,7 @@
     <DataSource Include="Sankhya-Prod.rds" />
   </ItemGroup>
   <ItemGroup>
+    <Report Include="Cópia de Painel Geral de Metas.rdl" />
     <Report Include="Painel Geral de Carteira.rdl" />
     <Report Include="Painel Geral de Indicadores.rdl" />
     <Report Include="Painel Geral de Metas.rdl" />
